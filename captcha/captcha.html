@@ -20,19 +20,20 @@
       height: 300px;
     }
 
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
     /* Your style here... */
   </style>
 </head>
 
 <body>
   <div id="captcha-container">
-    <!-- Add your CAPTCHA here: -->
-    Hello world!
-
-    <!-- We've added a sample button. Feel free to remove it: -->
-    <button id="solve">
-      Solve!
-    </button>
+    <canvas id="imageCanvas"></canvas>
+    <canvas id="traceCanvas"></canvas>
   </div>
 
   <script type="text/javascript">
@@ -42,9 +43,104 @@
         window.top.postMessage("success", '*');
       }
 
-      // Your CAPTCHA code goes here, we've added a simple example below:
-      document.getElementById('solve')
-           .addEventListener('click', () => captchaSuccess());
+      // Set up the global variables we'll use.
+      var CANVAS_WIDTH = 390;
+      var CANVAS_HEIGHT = 300;
+      var traceCanvas = document.getElementById('traceCanvas');
+      var traceCtx = traceCanvas.getContext('2d');
+      traceCanvas.width = CANVAS_WIDTH;
+      traceCanvas.height = CANVAS_HEIGHT;
+      traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
+
+      var imageCanvas = document.getElementById('imageCanvas');
+      var imageCtx = imageCanvas.getContext('2d');
+      imageCanvas.width = CANVAS_WIDTH;
+      imageCanvas.height = CANVAS_HEIGHT;
+
+      // Now draw a basic shape on the canvas, our job is to trace as close to possible to it and get an accuracy score.
+      function drawShape() {
+        // We want the outline only.
+        imageCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
+        // Draw a white background.
+        imageCtx.fillStyle = 'white'; // Set the background color
+        imageCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill the canvas with white
+        // Draw a blue shape (a diamond in this case).
+        imageCtx.beginPath();
+        imageCtx.moveTo(50, 150); // Start point
+        imageCtx.lineTo(150, 50); // Line to top right
+        imageCtx.lineTo(250, 150); // Line to bottom right
+        imageCtx.lineTo(150, 250); // Line to bottom left
+        imageCtx.closePath(); // Close the shape
+        imageCtx.strokeStyle = 'blue'; // Set the stroke color
+        imageCtx.lineWidth = 5; // Set the line width
+        imageCtx.stroke(); // Draw the outline
+      }
+
+      // Draw the shape on the canvas.
+      drawShape();
+
+      // Set up the mouse event listeners for tracing.
+      var isDrawing = false;
+      var lastX = 0;
+      var lastY = 0;
+      traceCanvas.addEventListener('mousedown', function(e) {
+        isDrawing = true;
+        lastX = e.offsetX;
+        lastY = e.offsetY;
+      });
+      traceCanvas.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        traceCtx.beginPath();
+        traceCtx.moveTo(lastX, lastY);
+        traceCtx.lineTo(e.offsetX, e.offsetY);
+        traceCtx.strokeStyle = 'red';
+        traceCtx.lineWidth = 5;
+        traceCtx.stroke();
+        lastX = e.offsetX;
+        lastY = e.offsetY;
+      });
+      traceCanvas.addEventListener('mouseup', function(e) {
+        isDrawing = false;
+        // Calculate how accurate the user is.
+        var traceData = traceCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        var imageData = imageCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        var tdata = traceData.data;
+        var idata = imageData.data;
+        var imagePixels = 0;
+        var matchedPixels = 0;
+        var whitePixels = 0;
+        for (var i = 0; i < idata.length; i += 4) {
+          if (idata[i] === 0 && idata[i + 1] === 0 && idata[i + 2] === 255) {
+            imagePixels++;
+            // Check if the pixel is red (the user's trace).
+            if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
+              matchedPixels++;
+            }
+          } else if (idata[i] === 255 && idata[i + 1] === 255 && idata[i + 2] === 255) {
+            // Count white pixels in the image.
+            if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
+              whitePixels++;
+            }
+          }
+        }
+        // Calculate the accuracy percentage.
+        var accuracy = (matchedPixels / imagePixels) * 100;
+        var whiteAccuracy = (whitePixels / ((idata.length / 4) - imagePixels)) * 100;
+        console.log("Accuracy: " + accuracy + "%");
+        console.log("WhitePixels count", whitePixels, "accuracy", whiteAccuracy);
+        // If the accuracy is above a certain threshold, consider it a failure.
+        if (whiteAccuracy > 20) {
+          alert("Too messy! Try again.");
+          traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
+          return;
+        }
+        if (accuracy > 70) { // You can adjust this threshold
+          captchaSuccess();
+        } else {
+          alert("Your trace could be better! Try again.");
+          traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
+        }
+      });
 
     })(window, document);
   </script>
