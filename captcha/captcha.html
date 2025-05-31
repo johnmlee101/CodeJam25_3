@@ -1,192 +1,211 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <title>Joel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Joel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style type="text/css">
-    html,
-    body {
-      background: pink;
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
+    <style type="text/css">
+        html,
+        body {
+            background: pink;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
 
-    #captcha-container {
-      background: white;
-      width: 390px;
-      height: 300px;
-    }
+        #captcha-container {
+            background: white;
+            width: 390px;
+            height: 300px;
+        }
 
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      /* Change cursor to a pencil */
-      cursor: crosshair;
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* Change cursor to a pencil */
+            cursor: crosshair;
 
-      /* Disable scroll on tap when using canvas */
-      touch-action: none;
-    }
+            /* Disable scroll on tap when using canvas */
+            touch-action: none;
+        }
 
-    /* Your style here... */
-  </style>
+        /* Your style here... */
+    </style>
 </head>
 
 <body>
-  <div id="captcha-container">
-    <canvas id="imageCanvas"></canvas>
-    <canvas id="traceCanvas"></canvas>
-  </div>
+    <div id="captcha-container">
+        <canvas id="imageCanvas"></canvas>
+        <canvas id="traceCanvas"></canvas>
+    </div>
 
-  <script type="text/javascript">
-    (function(window, document){
-      // This is how you tell the parent window that the CAPTCHA was successful.
-      function captchaSuccess() {
-        window.top.postMessage("success", '*');
-      }
-
-      // Set up the global variables we'll use.
-      var CANVAS_WIDTH = 390;
-      var CANVAS_HEIGHT = 300;
-      var traceCanvas = document.getElementById('traceCanvas');
-      var traceCtx = traceCanvas.getContext('2d');
-      traceCanvas.width = CANVAS_WIDTH;
-      traceCanvas.height = CANVAS_HEIGHT;
-      traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
-
-      var imageCanvas = document.getElementById('imageCanvas');
-      var imageCtx = imageCanvas.getContext('2d');
-      imageCanvas.width = CANVAS_WIDTH;
-      imageCanvas.height = CANVAS_HEIGHT;
-
-      // Now draw a basic shape on the canvas, our job is to trace as close to possible to it and get an accuracy score.
-      function drawShape() {
-        imageCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
-
-        // Draw a white background.
-        imageCtx.fillStyle = 'white'; // Set the background color
-        imageCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill the canvas with white
-
-        // Put instructions at the top
-        imageCtx.font = '20px Arial';
-        imageCtx.fillStyle = 'black';
-        imageCtx.fillText('Trace the shape below:', 10, 30);
-
-        // Draw a blue shape (a diamond in this case).
-        imageCtx.beginPath();
-        imageCtx.moveTo(50, 150); // Start point
-        imageCtx.lineTo(150, 50); // Line to top right
-        imageCtx.lineTo(250, 150); // Line to bottom right
-        imageCtx.lineTo(150, 250); // Line to bottom left
-        imageCtx.closePath(); // Close the shape
-        imageCtx.strokeStyle = 'blue'; // Set the stroke color
-        imageCtx.lineWidth = 5; // Set the line width
-        imageCtx.stroke(); // Draw the outline
-      }
-
-      // Draw the shape on the canvas.
-      drawShape();
-
-      // Set up the mouse event listeners for tracing.
-      var isDrawing = false;
-      var lastX = 0;
-      var lastY = 0;
-
-
-
-      function drawPath(e, x, y) {
-        if (!isDrawing) return;
-        traceCtx.beginPath();
-        traceCtx.moveTo(lastX, lastY);
-        traceCtx.lineTo(x, y);
-        traceCtx.strokeStyle = 'red';
-        traceCtx.lineWidth = 5;
-        traceCtx.stroke();
-        lastX = x;
-        lastY = y;
-      }
-
-      function calculateAccuracy() {
-        // Calculate how accurate the user is.
-        var traceData = traceCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        var imageData = imageCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        var tdata = traceData.data;
-        var idata = imageData.data;
-        var imagePixels = 0;
-        var matchedPixels = 0;
-        var whitePixels = 0;
-        for (var i = 0; i < idata.length; i += 4) {
-          if (idata[i] === 0 && idata[i + 1] === 0 && idata[i + 2] === 255) {
-            imagePixels++;
-            // Check if the pixel is red (the user's trace).
-            if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
-              matchedPixels++;
+    <script type="text/javascript">
+        (function (window, document) {
+            // This is how you tell the parent window that the CAPTCHA was successful.
+            function captchaSuccess() {
+                window.top.postMessage("success", '*');
             }
-          } else if (idata[i] === 255 && idata[i + 1] === 255 && idata[i + 2] === 255) {
-            // Count white pixels in the image.
-            if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
-              whitePixels++;
+
+            // Set up the global variables we'll use.
+            var CANVAS_WIDTH = 390;
+            var CANVAS_HEIGHT = 300;
+            var traceCanvas = document.getElementById('traceCanvas');
+            var traceCtx = traceCanvas.getContext('2d');
+            traceCanvas.width = CANVAS_WIDTH;
+            traceCanvas.height = CANVAS_HEIGHT;
+            traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
+
+            // We have images stored under /img/img1.png, /img/img2.png, etc. Let's compile an array of them to select from.
+            var imageCount = 17; // Assuming you have 5 images named img1.png, img2.png, etc.
+            var possibleImages = [];
+            for (var i = 1; i <= imageCount; i++) {
+                possibleImages.push('./img/img' + i + '.png');
             }
-          }
-        }
-        // Calculate the accuracy percentage.
-        var accuracy = (matchedPixels / imagePixels) * 100;
-        var whiteAccuracy = (whitePixels / ((idata.length / 4) - imagePixels)) * 100;
-        console.log("Accuracy: " + accuracy + "%");
-        console.log("WhitePixels count", whitePixels, "accuracy", whiteAccuracy);
-        // If the accuracy is above a certain threshold, consider it a failure.
-        if (whiteAccuracy > 20) {
-          alert("Too messy! Try again.");
-          traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
-          return;
-        }
-        if (accuracy > 70) { // You can adjust this threshold
-          captchaSuccess();
-        } else {
-          alert("Your trace could be better! Try again.");
-          traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
-        }
-      }
 
-      traceCanvas.addEventListener('mousedown', function(e) {
-        isDrawing = true;
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-      });
+            var imageCanvas = document.getElementById('imageCanvas');
+            var imageCtx = imageCanvas.getContext('2d');
+            imageCanvas.width = CANVAS_WIDTH;
+            imageCanvas.height = CANVAS_HEIGHT;
 
-      traceCanvas.addEventListener('mousemove', function(e) {
-        drawPath(e, e.offsetX, e.offsetY);
-      });
+            // Now draw a basic shape on the canvas, our job is to trace as close to possible to it and get an accuracy score.
+            function drawShape() {
+                imageCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
 
-      traceCanvas.addEventListener('mouseup', function(e) {
-        isDrawing = false;
-        calculateAccuracy();
-      });
+                // Draw a white background.
+                imageCtx.fillStyle = 'white'; // Set the background color
+                imageCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill the canvas with white
 
-      // Support touch events
-      traceCanvas.addEventListener('touchstart', function(e) {
-        e.preventDefault(); // Prevent scrolling
-        isDrawing = true;
-        var touch = e.touches[0];
-        lastX = touch.clientX - traceCanvas.getBoundingClientRect().left;
-        lastY = touch.clientY - traceCanvas.getBoundingClientRect().top;
-      });
-      traceCanvas.addEventListener('touchmove', function(e) {
-        e.preventDefault(); // Prevent scrolling
-        if (!isDrawing) return;
-        var touch = e.touches[0];
-        drawPath(e, touch.clientX - traceCanvas.getBoundingClientRect().left, touch.clientY - traceCanvas.getBoundingClientRect().top);
-      });
+                // Draw a random image from the possible images.
+                var randomIndex = Math.floor(Math.random() * possibleImages.length);
+                var img = new Image();
+                img.src = possibleImages[randomIndex];
+                img.onload = function () {
+                    // Draw the image on the canvas.
+                    imageCtx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                };
 
-      traceCanvas.addEventListener('touchend', function(e) {
-        isDrawing = false;
-        calculateAccuracy();
-      });
 
-    })(window, document);
-  </script>
+                // Put instructions at the top
+                imageCtx.font = '20px Arial';
+                imageCtx.fillStyle = 'black';
+                imageCtx.fillText('Trace the shape below:', 10, 30);
+
+                // // Draw a blue shape (a diamond in this case).
+                // imageCtx.beginPath();
+                // imageCtx.moveTo(50, 150); // Start point
+                // imageCtx.lineTo(150, 50); // Line to top right
+                // imageCtx.lineTo(250, 150); // Line to bottom right
+                // imageCtx.lineTo(150, 250); // Line to bottom left
+                // imageCtx.closePath(); // Close the shape
+                // imageCtx.strokeStyle = 'blue'; // Set the stroke color
+                // imageCtx.lineWidth = 5; // Set the line width
+                // imageCtx.stroke(); // Draw the outline
+            }
+
+            // Draw the shape on the canvas.
+            drawShape();
+
+            // Set up the mouse event listeners for tracing.
+            var isDrawing = false;
+            var lastX = 0;
+            var lastY = 0;
+
+
+
+            function drawPath(e, x, y) {
+                if (!isDrawing) return;
+                traceCtx.beginPath();
+                traceCtx.moveTo(lastX, lastY);
+                traceCtx.lineTo(x, y);
+                traceCtx.strokeStyle = 'red';
+                traceCtx.lineWidth = 5;
+                traceCtx.stroke();
+                lastX = x;
+                lastY = y;
+            }
+
+            function calculateAccuracy() {
+                // Calculate how accurate the user is.
+                var traceData = traceCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                var imageData = imageCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                var tdata = traceData.data;
+                var idata = imageData.data;
+                var imagePixels = 0;
+                var matchedPixels = 0;
+                var whitePixels = 0;
+                for (var i = 0; i < idata.length; i += 4) {
+                    if (idata[i] === 0 && idata[i + 1] === 0 && idata[i + 2] === 255) {
+                        imagePixels++;
+                        // Check if the pixel is red (the user's trace).
+                        if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
+                            matchedPixels++;
+                        }
+                    } else if (idata[i] === 255 && idata[i + 1] === 255 && idata[i + 2] === 255) {
+                        // Count white pixels in the image.
+                        if (tdata[i] === 255 && tdata[i + 1] === 0 && tdata[i + 2] === 0) {
+                            whitePixels++;
+                        }
+                    }
+                }
+                // Calculate the accuracy percentage.
+                var accuracy = (matchedPixels / imagePixels) * 100;
+                var whiteAccuracy = (whitePixels / ((idata.length / 4) - imagePixels)) * 100;
+                console.log("Accuracy: " + accuracy + "%");
+                console.log("WhitePixels count", whitePixels, "accuracy", whiteAccuracy);
+                // If the accuracy is above a certain threshold, consider it a failure.
+                if (whiteAccuracy > 20) {
+                    alert("Too messy! Try again.");
+                    drawShape();
+                    return;
+                }
+                if (accuracy > 70) { // You can adjust this threshold
+                    captchaSuccess();
+                } else {
+                    alert("Your trace could be better! Try again.");
+                    drawShape();
+                }
+            }
+
+            traceCanvas.addEventListener('mousedown', function (e) {
+                isDrawing = true;
+                lastX = e.offsetX;
+                lastY = e.offsetY;
+            });
+
+            traceCanvas.addEventListener('mousemove', function (e) {
+                drawPath(e, e.offsetX, e.offsetY);
+            });
+
+            traceCanvas.addEventListener('mouseup', function (e) {
+                isDrawing = false;
+                calculateAccuracy();
+            });
+
+            // Support touch events
+            traceCanvas.addEventListener('touchstart', function (e) {
+                e.preventDefault(); // Prevent scrolling
+                isDrawing = true;
+                var touch = e.touches[0];
+                lastX = touch.clientX - traceCanvas.getBoundingClientRect().left;
+                lastY = touch.clientY - traceCanvas.getBoundingClientRect().top;
+            });
+            traceCanvas.addEventListener('touchmove', function (e) {
+                e.preventDefault(); // Prevent scrolling
+                if (!isDrawing) return;
+                var touch = e.touches[0];
+                drawPath(e, touch.clientX - traceCanvas.getBoundingClientRect().left, touch.clientY - traceCanvas.getBoundingClientRect().top);
+            });
+
+            traceCanvas.addEventListener('touchend', function (e) {
+                isDrawing = false;
+                calculateAccuracy();
+            });
+
+        })(window, document);
+    </script>
 </body>
+
 </html>
