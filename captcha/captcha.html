@@ -61,11 +61,17 @@
 
       // Now draw a basic shape on the canvas, our job is to trace as close to possible to it and get an accuracy score.
       function drawShape() {
-        // We want the outline only.
         imageCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas
+
         // Draw a white background.
         imageCtx.fillStyle = 'white'; // Set the background color
         imageCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill the canvas with white
+
+        // Put instructions at the top
+        imageCtx.font = '20px Arial';
+        imageCtx.fillStyle = 'black';
+        imageCtx.fillText('Trace the shape below:', 10, 30);
+
         // Draw a blue shape (a diamond in this case).
         imageCtx.beginPath();
         imageCtx.moveTo(50, 150); // Start point
