@@ -158,14 +158,16 @@
                 // If the accuracy is above a certain threshold, consider it a failure.
                 if (whiteAccuracy > 20) {
                     alert("Too messy! Try again.");
-                    drawShape();
+                    traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
+                    drawShape(); // Redraw the shape
                     return;
                 }
                 if (accuracy > 70) { // You can adjust this threshold
                     captchaSuccess();
                 } else {
                     alert("Your trace could be better! Try again.");
-                    drawShape();
+                    traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
+                    drawShape(); // Redraw the shape
                 }
             }
 
