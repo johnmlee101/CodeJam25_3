@@ -26,6 +26,9 @@
       left: 0;
       /* Change cursor to a pencil */
       cursor: crosshair;
+
+      /* Disable scroll on tap when using canvas */
+      touch-action: none;
     }
 
     /* Your style here... */
@@ -91,24 +94,22 @@
       var isDrawing = false;
       var lastX = 0;
       var lastY = 0;
-      traceCanvas.addEventListener('mousedown', function(e) {
-        isDrawing = true;
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-      });
-      traceCanvas.addEventListener('mousemove', function(e) {
+
+
+
+      function drawPath(e, x, y) {
         if (!isDrawing) return;
         traceCtx.beginPath();
         traceCtx.moveTo(lastX, lastY);
-        traceCtx.lineTo(e.offsetX, e.offsetY);
+        traceCtx.lineTo(x, y);
         traceCtx.strokeStyle = 'red';
         traceCtx.lineWidth = 5;
         traceCtx.stroke();
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-      });
-      traceCanvas.addEventListener('mouseup', function(e) {
-        isDrawing = false;
+        lastX = x;
+        lastY = y;
+      }
+
+      function calculateAccuracy() {
         // Calculate how accurate the user is.
         var traceData = traceCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         var imageData = imageCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -148,6 +149,41 @@
           alert("Your trace could be better! Try again.");
           traceCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the canvas for a new attempt
         }
+      }
+
+      traceCanvas.addEventListener('mousedown', function(e) {
+        isDrawing = true;
+        lastX = e.offsetX;
+        lastY = e.offsetY;
+      });
+
+      traceCanvas.addEventListener('mousemove', function(e) {
+        drawPath(e, e.offsetX, e.offsetY);
+      });
+
+      traceCanvas.addEventListener('mouseup', function(e) {
+        isDrawing = false;
+        calculateAccuracy();
+      });
+
+      // Support touch events
+      traceCanvas.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent scrolling
+        isDrawing = true;
+        var touch = e.touches[0];
+        lastX = touch.clientX - traceCanvas.getBoundingClientRect().left;
+        lastY = touch.clientY - traceCanvas.getBoundingClientRect().top;
+      });
+      traceCanvas.addEventListener('touchmove', function(e) {
+        e.preventDefault(); // Prevent scrolling
+        if (!isDrawing) return;
+        var touch = e.touches[0];
+        drawPath(e, touch.clientX - traceCanvas.getBoundingClientRect().left, touch.clientY - traceCanvas.getBoundingClientRect().top);
+      });
+
+      traceCanvas.addEventListener('touchend', function(e) {
+        isDrawing = false;
+        calculateAccuracy();
       });
 
     })(window, document);
