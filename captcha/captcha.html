@@ -85,13 +85,14 @@
                 img.onload = function () {
                     // Draw the image on the canvas.
                     imageCtx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Put instructions at the top
+                    imageCtx.font = '20px Arial';
+                    imageCtx.fillStyle = 'black';
+                    imageCtx.fillText('Trace the shape below:', 10, 30);
                 };
 
 
-                // Put instructions at the top
-                imageCtx.font = '20px Arial';
-                imageCtx.fillStyle = 'black';
-                imageCtx.fillText('Trace the shape below:', 10, 30);
 
                 // // Draw a blue shape (a diamond in this case).
                 // imageCtx.beginPath();
@@ -112,8 +113,6 @@
             var isDrawing = false;
             var lastX = 0;
             var lastY = 0;
-
-
 
             function drawPath(e, x, y) {
                 if (!isDrawing) return;
